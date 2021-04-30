@@ -1,9 +1,10 @@
+const createHttpError = require('http-errors');
 const db = require('../../db');
 
-const getCustomers = async (req, res) => {
+const getCustomers = async (req, res, next) => {
 
     if(!req.user) {
-        return res.status(401).send({ status: 'error', message: 'Missing parameters'});
+        return next(createHttpError(401, 'Token not Provided'));
     }
     
     const { company_id } = req.user;

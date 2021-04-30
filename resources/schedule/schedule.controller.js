@@ -1,3 +1,4 @@
+const createHttpError = require('http-errors');
 const { checkForUser } = require('../../components/checkForUser');
 const db = require('../../db');
 
@@ -71,9 +72,9 @@ const addCompanySchedule = async (req, res) => {
 }
 
 
-const addDayAndTime = async (req, res) => {
+const addDayAndTime = async (req, res, next) => {
     if(!req.body.name_of_day_id || !req.body.time_start || !req.body.time_end ||!req.body.schedule_id) {
-        return res.status(400).send({ status: 'error', message: 'Missing day or time'});
+        return next(createHttpError(401, 'Invalid or missing fields'));
     }
 
     const { name_of_day_id, time_start, time_end, schedule_id } = req.body;
@@ -103,7 +104,7 @@ const addDayAndTime = async (req, res) => {
             }
         })
     } catch (err) {
-        res.status(500).end();
+        return next(createHttpError(500, 'an error occured'));
     }
 }
 

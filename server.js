@@ -1,13 +1,12 @@
 require("dotenv").config();
 const express = require("express");
-const db = require("./db")
 const morgan = require("morgan");
 const cors = require('cors');
 const app = express();
+const createError = require("http-errors");
+
 
 //apis
-const { companyRouter } = require('./resources/company/company.router');
-const { userRouter } = require('./resources/user/user.router');
 const { deliveryRouter } = require('./resources/delivery/delivery.router');
 const { driverRouter } = require('./resources/driver/driver.router');
 const { customerRouter } = require('./resources/customer/customer.router');
@@ -28,8 +27,6 @@ app.use((req, res, next) => {
 app.use('/api/v1/', protect);
 
 //Routes for fetching data
-app.use('/api/v1/company', companyRouter );
-app.use('/api/v1/users', userRouter);
 app.use('/api/v1/deliveries', deliveryRouter);
 app.use('/api/v1/drivers', driverRouter);
 app.use('/api/v1/invites', invitesRouter);
@@ -41,6 +38,16 @@ app.post('/signup', signup);
 app.post('/authenticate', signupAuthentication);
 app.post('/signin', signin );
 app.post('/driver/signin', registerForDriver);
+
+//error handling object
+app.use((err, req, res, next) => {
+    console.log(err);
+    const error = err.status
+    ? err
+    : createError(500, "Something went wrong. Notified dev.");
+
+    res.status(error.status).json(error);
+});
 
 const port = process.env.PORT || 3005;
 
