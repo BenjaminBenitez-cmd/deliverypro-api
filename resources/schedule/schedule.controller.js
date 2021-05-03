@@ -8,7 +8,7 @@ const getCompanySchedule = async (req, res) => {
     }
 
     const companyID = req.user.company_id;
-
+    
     try {
         const results = await db.query("SELECT id, name FROM schedules WHERE (schedules.company_id = $1 and schedules.active = true)", [companyID]);
 
@@ -24,10 +24,9 @@ const getCompanySchedule = async (req, res) => {
 
         res.status(200).json({
             status: 'success',
-            results: results.rows.length,
             data: { 
                 schedule: {
-                    ...results.rows[0],
+                    id: results.rows[0].id,
                     days: days.rows, 
                 },
                 days_available: daysAvailable.rows
@@ -90,7 +89,7 @@ const addDayAndTime = async (req, res, next) => {
         }
         
         //then insert the time
-        const time = await db.query("INSERT INTO times (time_start, time_end, name_of_day_id, schedule_id) values ($1, $2, $3, $4) returning *", [time_start, time_end, name_of_day_id, schedule_id ]);
+        const time = await db.query("WITH inserted AS (INSERT INTO times (time_start, time_end, name_of_day_id, schedule_id) VALUES ($1, $2, $3, $4) RETURNING *) SELECT inserted.*, names_of_days.name FROM inserted INNER JOIN names_of_days ON inserted.name_of_day_Id = names_of_days.id", [time_start, time_end, name_of_day_id, schedule_id ]);
 
         //Proceed to insert the days 
         if(time.rows[0] === undefined) {
