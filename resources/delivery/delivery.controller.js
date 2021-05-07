@@ -1,7 +1,7 @@
 const db = require("../../db");
 
 const getDeliveries = async (req, res) => {
-  const company_id = req.user.company_id;
+  const company_id = (req.user && req.user.company_id) || req.company.id;
 
   try {
     const results = await db.query(
@@ -134,7 +134,8 @@ const toggleDelivery = async (req, res) => {
 };
 
 const addDelivery = async (req, res) => {
-  const { id, company_id } = req.user;
+  const { id, company_id } =
+    (req.user && req.user.company_id) || req.company.id;
 
   try {
     const clientCreated = await db.query(

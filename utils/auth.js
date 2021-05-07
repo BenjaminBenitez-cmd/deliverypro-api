@@ -248,3 +248,42 @@ module.exports.protect = async (req, res, next) => {
   req.user = user.rows[0];
   next();
 };
+
+module.exports.protectPublicRoute = async (req, res, next) => {
+  const bearer = req.headers.authorization;
+
+  if (!bearer || !bearer.startsWith("Bearer ")) {
+    return res.status(401).end();
+  }
+
+  const token = bearer.split("Bearer ")[1].trim();
+  const identifier = token.slice(0, 6);
+
+  let isValid;
+  try {
+    isValid = await db.query(
+      "SELECT id, company_api_key FROM company WHERE company_api_key_id = $1",
+      [identifier]
+    );
+
+    if (isValid.rows[0] === undefined) {
+      return res
+        .status(401)
+        .send({ status: "error", message: "Invalid Request" });
+    }
+    const isTokenValid = await comparePassword(
+      token,
+      isValid.rows[0].company_api_key
+    );
+    if (!isTokenValid) {
+      return res
+        .status(401)
+        .send({ status: "error", message: "Invalid Request" });
+    }
+  } catch (err) {
+    return res.status(500).end();
+  }
+
+  req.company = { id: isValid.rows[0].id };
+  next();
+};
