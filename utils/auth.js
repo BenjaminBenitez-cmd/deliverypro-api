@@ -145,7 +145,7 @@ module.exports.signin = async (req, res) => {
 
   try {
     const user = await db.query(
-      "SELECT email, password, name,  id FROM users WHERE email = $1",
+      "SELECT email, password, name, id FROM users WHERE email = $1",
       [req.body.email]
     );
     if (user.rows[0] === undefined)

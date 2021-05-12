@@ -1,12 +1,10 @@
-const db = require("../../db");
+const Company = require("./company.model");
 
 const getCompany = async (req, res) => {
   const companyID = req.user.company_id;
 
   try {
-    const result = await db.query("SELECT * FROM company WHERE id = $1", [
-      companyID,
-    ]);
+    const result = await Company.getOne(companyID);
 
     res.status(200).json({
       status: "success",

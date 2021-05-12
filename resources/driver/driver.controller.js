@@ -1,13 +1,11 @@
 const db = require("../../db");
+const Driver = require("./driver.model");
 
 const getDrivers = async (req, res) => {
   const companyID = req.user.company_id;
 
   try {
-    const response = await db.query(
-      "SELECT id, name, phone, email FROM users WHERE (role=2 and company_id = $1)",
-      [companyID]
-    );
+    const response = await Driver.getOne(companyID);
 
     res.status(200).json({
       status: "success",

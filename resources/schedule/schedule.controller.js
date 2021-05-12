@@ -113,12 +113,10 @@ const addDayAndTime = async (req, res, next) => {
 
     //Proceed to insert the days
     if (time.rows[0] === undefined) {
-      res
-        .status(500)
-        .send({
-          status: "error",
-          message: "There was an error with your request",
-        });
+      res.status(500).send({
+        status: "error",
+        message: "There was an error with your request",
+      });
     }
 
     res.status(200).json({

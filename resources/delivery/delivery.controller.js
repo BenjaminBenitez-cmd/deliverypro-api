@@ -1,13 +1,11 @@
 const db = require("../../db");
+const Delivery = require("./delivery.model");
 
 const getDeliveries = async (req, res) => {
   const company_id = req.user.company_id;
 
   try {
-    const results = await db.query(
-      "WITH query_delivery AS ( SELECT dl.id, dl.client, dl.delivery_status, t.time_start, t.time_end, n.name AS delivery_day FROM delivery AS dl INNER JOIN times AS t ON dl.delivery_time = t.id INNER JOIN names_of_days AS n ON dl.delivery_day = n.id WHERE dl.delivery_company_id = $1 ) , query_clients AS ( SELECT client.id, client.first_name, client.last_name, client.phone_number, client.email, address.district, address.street FROM client INNER JOIN address ON address.client_id = client.id WHERE delivery_company_id = $1 ) SELECT query_delivery.*, query_clients.first_name, query_clients.last_name, query_clients.phone_number, query_clients.email, query_clients.district, query_clients.street FROM query_delivery INNER JOIN query_clients ON query_delivery.client = query_clients.id",
-      [company_id]
-    );
+    const results = await Delivery.getMany(company_id);
     res.status(200).json({
       status: "success",
       results: results.rows.length,
@@ -32,10 +30,7 @@ const getDelivery = async (req, res) => {
   const company_id = req.user.company_id;
 
   try {
-    const results = await db.query(
-      "SELECT * FROM delivery WHERE (delivery.id = $1 AND delivery_company_id = $2)",
-      [id, company_id]
-    );
+    const results = await Delivery.getOne(id, company_id);
 
     res.status(200).json({
       status: "success",
@@ -67,23 +62,13 @@ const updateDelivery = async (req, res) => {
   } = req.body;
 
   try {
-    const belongsToCompany = await db.query(
-      "SELECT delivery_company_id FROM delivery WHERE id = $1",
-      [id]
-    );
-    if (
-      !belongsToCompany ||
-      belongsToCompany.rows[0].delivery_company_id !== companyID
-    ) {
-      return res.status(400).send({
-        status: "error",
-        message: "There was an error with your request",
-      });
-    }
-
-    const updatedDelivery = await db.query(
-      "UPDATE delivery SET delivery_day = $1, delivery_time = $2, delivery_driver = $3, delivery_status = $4 WHERE id = $5 RETURNING *",
-      [delivery_day, delivery_time, delivery_driver, delivery_status, id]
+    const updatedDelivery = await Delivery.updateOne(
+      id,
+      companyID,
+      delivery_day,
+      delivery_time,
+      delivery_driver,
+      delivery_status
     );
 
     res.status(201).json({
@@ -99,27 +84,10 @@ const updateDelivery = async (req, res) => {
 
 const toggleDelivery = async (req, res) => {
   const companyID = req.user.company_id;
+  const id = req.params.id;
 
   try {
-    const belongsToCompany = await db.query(
-      "SELECT delivery_company_id FROM delivery WHERE id = $1",
-      [req.params.id]
-    );
-
-    if (
-      belongsToCompany.rows <= 0 ||
-      belongsToCompany.rows[0].delivery_company_id !== companyID
-    ) {
-      return res.status(400).send({
-        status: "error",
-        message: "There was an error with your request",
-      });
-    }
-
-    const updatedDelivery = await db.query(
-      "UPDATE delivery SET delivery_status = NOT delivery_status WHERE id = $1 returning delivery_status, id",
-      [req.params.id]
-    );
+    const updatedDelivery = await Delivery.updateFullfillment(id, companyID);
 
     res.status(201).json({
       status: "success",
@@ -147,6 +115,7 @@ const addDelivery = async (req, res) => {
         company_id,
       ]
     );
+
     const deliveryCreated = await db.query(
       "INSERT INTO delivery (client, delivery_day, delivery_time, delivery_driver, delivery_company_id) values ($1, $2, $3, $4, $5) returning *",
       [
@@ -157,6 +126,7 @@ const addDelivery = async (req, res) => {
         company_id,
       ]
     );
+
     const addressCreated = await db.query(
       "INSERT INTO address (street, district, description, client_id) values($1, $2, $3, $4) returning *",
       [
