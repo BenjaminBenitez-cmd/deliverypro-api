@@ -1,14 +1,16 @@
 const createHttpError = require("http-errors");
 const db = require("../../db");
+const Days = require("../days/days.model");
 const Schedule = require("./schedule.model");
 
+//GET A SCHEDULE
 const getCompanySchedule = async (req, res) => {
   const companyID = req.user.company_id;
 
   try {
     const results = await Schedule.getOne(companyID);
 
-    const daysAvailable = await db.query("SELECT * FROM names_of_days");
+    const daysAvailable = await Days.getMany();
 
     if (results.rows[0] === undefined) {
       return res
@@ -36,6 +38,17 @@ const getCompanySchedule = async (req, res) => {
   }
 };
 
+//DELETE A SCHEDULE
+const deleteSchedule = async (req, res) => {
+  try {
+    await db.query("DELETE FROM schedules WHERE id = $1", [req.params.id]);
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).end();
+  }
+};
+
+//ADD A SCHEDULE
 const addCompanySchedule = async (req, res) => {
   if (!req.user) {
     return res.status(400).send({ status: "error", message: "Not Authorized" });
@@ -69,6 +82,7 @@ const addCompanySchedule = async (req, res) => {
   }
 };
 
+//ADD A DAY
 const addDayAndTime = async (req, res, next) => {
   if (
     !req.body.name_of_day_id ||
@@ -127,15 +141,6 @@ const addDayAndTime = async (req, res, next) => {
 const deleteDaysAndTime = async (req, res) => {
   try {
     await db.query("DELETE FROM times WHERE id = $1", [req.params.id]);
-    res.status(204).end();
-  } catch (err) {
-    res.status(500).end();
-  }
-};
-
-const deleteSchedule = async (req, res) => {
-  try {
-    await db.query("DELETE FROM schedules WHERE id = $1", [req.params.id]);
     res.status(204).end();
   } catch (err) {
     res.status(500).end();
