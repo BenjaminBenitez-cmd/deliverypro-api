@@ -19,3 +19,5 @@ Schedule.getOne = (companyId) => {
 Schedule.deleteOne = (scheduleId) => {
   return db.query("DELETE FROM schedule WHERE id = $1", [scheduleId]);
 };
+
+module.exports = Schedule;

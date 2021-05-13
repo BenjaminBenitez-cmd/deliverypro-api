@@ -1,5 +1,5 @@
-const db = require("../../db");
-const { mailer } = require("../../utils/mailer");
+const Company = require("../company/company.model");
+const User = require("./user.model");
 
 const getUser = async (req, res) => {
   if (req.user === undefined) {
@@ -10,10 +10,8 @@ const getUser = async (req, res) => {
   const id = req.user.id;
 
   try {
-    const results = await db.query(
-      "SELECT id, name, phone, email FROM users WHERE users.id = $1",
-      [id]
-    );
+    const results = await User.getOne(id);
+
     res.status(200).json({
       status: "success",
       data: {
@@ -21,6 +19,7 @@ const getUser = async (req, res) => {
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(500).end();
   }
 };
@@ -49,19 +48,22 @@ const updateUser = async (req, res) => {
   const { user_name, company_name, company_location } = req.body;
 
   try {
-    const userUpdated = await db.query(
-      "UPDATE users SET name=$1 WHERE id = $2 RETURNING id",
-      [user_name, userID]
-    );
+    const userUpdated = await User.updateOne(user_name, userID);
+
+    //ENSURE THAT THE USERS WERE INSERTED
     if (userUpdated.rows <= 0) {
       return res
         .status(500)
         .send({ status: "error", message: "An error occured" });
     }
-    const companyUpdated = await db.query(
-      "UPDATE company SET name=$1, location=$2 WHERE id = $3 RETURNING id",
-      [company_name, company_location, companyID]
+
+    const companyUpdated = await Company.updateOne(
+      company_name,
+      company_location,
+      companyID
     );
+
+    //ENSURE THAT THE COMPANY WAS UPDATED
     if (companyUpdated.rows <= 0) {
       return res
         .status(500)
@@ -69,8 +71,6 @@ const updateUser = async (req, res) => {
     }
 
     res.status(200).json({ status: "success" });
-
-    console.log("sucess");
   } catch (err) {
     console.log(err);
     res.status(500).end();

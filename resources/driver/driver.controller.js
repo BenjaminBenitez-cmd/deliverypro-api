@@ -1,4 +1,3 @@
-const db = require("../../db");
 const Driver = require("./driver.model");
 
 const getDrivers = async (req, res) => {

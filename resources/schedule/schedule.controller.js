@@ -1,15 +1,12 @@
 const createHttpError = require("http-errors");
-const { checkForUser } = require("../../components/checkForUser");
 const db = require("../../db");
+const Schedule = require("./schedule.model");
 
 const getCompanySchedule = async (req, res) => {
   const companyID = req.user.company_id;
 
   try {
-    const results = await db.query(
-      "SELECT id, name FROM schedules WHERE (schedules.company_id = $1 and schedules.active = true)",
-      [companyID]
-    );
+    const results = await Schedule.getOne(companyID);
 
     const daysAvailable = await db.query("SELECT * FROM names_of_days");
 
@@ -19,7 +16,7 @@ const getCompanySchedule = async (req, res) => {
         .send({ status: "not found", message: "No active schedule" });
     }
 
-    const days = await db.query(
+    const times = await db.query(
       "SELECT t.id, t.time_start, t.time_end, n.name, n.id AS name_of_day_id FROM times As t INNER JOIN names_of_days AS n ON t.name_of_day_id = n.id WHERE t.schedule_id = $1",
       [results.rows[0].id]
     );
@@ -29,7 +26,7 @@ const getCompanySchedule = async (req, res) => {
       data: {
         schedule: {
           id: results.rows[0].id,
-          days: days.rows,
+          days: times.rows,
         },
         days_available: daysAvailable.rows,
       },
@@ -53,10 +50,7 @@ const addCompanySchedule = async (req, res) => {
   const companyID = req.user.company_id;
 
   try {
-    const results = await db.query(
-      "INSERT INTO schedules (name, company_id) VALUES ($1, $2) returning *",
-      [name, companyID]
-    );
+    const results = await Schedule.create(name, companyID);
 
     if (results.rows[0] === undefined) {
       return res

@@ -14,4 +14,11 @@ Company.create = (name, email) => {
   ]);
 };
 
+Company.updateOne = (name, location, id) => {
+  return db.query(
+    "UPDATE company SET name=$1, location=$2 WHERE id = $3 RETURNING id",
+    [name, location, id]
+  );
+};
+
 module.exports = Company;
