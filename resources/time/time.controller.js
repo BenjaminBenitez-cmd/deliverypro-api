@@ -99,8 +99,24 @@ const addDayAndTime = async (req, res, next) => {
   }
 };
 
+const getTimes = (req, res) => {
+  const scheduleId = req.body.scheduleId;
+  try {
+    const times = Time.getMany(scheduleId);
+    res.status(200).json({
+      status: "success",
+      data: {
+        times: times.rows,
+      },
+    });
+  } catch (err) {
+    res.status(500).end();
+  }
+};
+
 module.exports = {
   updateTime,
   deleteDaysAndTime,
   addDayAndTime,
+  getTimes,
 };

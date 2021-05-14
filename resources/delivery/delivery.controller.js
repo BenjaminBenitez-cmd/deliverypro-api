@@ -1,7 +1,8 @@
-const db = require("../../db");
+const Address = require("../address/address.model");
+const Customer = require("../customer/customer.model");
 const Delivery = require("./delivery.model");
 
-const getDeliveries = async (req, res) => {
+const getDeliveries = async (req, res, next) => {
   const company_id = req.user.company_id;
 
   try {
@@ -14,7 +15,6 @@ const getDeliveries = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log(err);
     res.status(500).end();
   }
 };
@@ -59,6 +59,9 @@ const updateDelivery = async (req, res) => {
     delivery_time,
     delivery_driver,
     delivery_status,
+    street,
+    district,
+    description,
   } = req.body;
 
   try {
@@ -103,39 +106,38 @@ const toggleDelivery = async (req, res) => {
 
 const addDelivery = async (req, res) => {
   const { id, company_id } = req.user;
+  const {
+    first_name,
+    last_name,
+    email,
+    phone_number,
+    delivery_day,
+    delivery_time,
+  } = req.body;
 
   try {
-    const clientCreated = await db.query(
-      "INSERT INTO client (first_name, last_name, phone_number, email, delivery_company_id) values($1, $2, $3, $4, $5) returning *",
-      [
-        req.body.first_name,
-        req.body.last_name,
-        req.body.phone_number,
-        req.body.email,
-        company_id,
-      ]
+    const clientCreated = await Customer.createOne(
+      first_name,
+      last_name,
+      phone_number,
+      email,
+      company_id
     );
 
-    const deliveryCreated = await db.query(
-      "INSERT INTO delivery (client, delivery_day, delivery_time, delivery_driver, delivery_company_id) values ($1, $2, $3, $4, $5) returning *",
-      [
-        clientCreated.rows[0].id,
-        req.body.delivery_day,
-        req.body.delivery_time,
-        id,
-        company_id,
-      ]
+    const deliveryCreated = await Delivery.createOne(
+      clientCreated.rows[0].id,
+      delivery_day,
+      delivery_time,
+      id,
+      company_id
     );
 
-    const addressCreated = await db.query(
-      "INSERT INTO address (street, district, description, client_id) values($1, $2, $3, $4) returning *",
-      [
-        req.body.street,
-        req.body.district,
-        req.body.description,
-        clientCreated.rows[0].id,
-      ]
+    const addressCreated = await Address.createOne(
+      street,
+      district,
+      clientCreated.rows[0].id
     );
+
     res.status(201).json({
       status: "success",
       data: {

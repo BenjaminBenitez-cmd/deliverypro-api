@@ -20,6 +20,7 @@ const {
 const { schedulesRouter } = require("./resources/schedule/schedule.router");
 const { companyRouter } = require("./resources/company/company.router");
 const { userRouter } = require("./resources/user/user.router");
+const apiErrorHandler = require("./error/api-error-handler");
 
 app.use(cors());
 app.use(express.json());
@@ -29,6 +30,8 @@ app.use((req, res, next) => {
   console.log("Yeah our middleware");
   next();
 });
+//Middleware for error handling
+app.use(apiErrorHandler);
 
 //Middleware for protecting the api
 app.use("/api/v1/", protect);
@@ -49,14 +52,14 @@ app.post("/signin", signin);
 app.post("/driver/signin", registerForDriver);
 
 //error handling object
-app.use((err, req, res, next) => {
-  console.log(err);
-  const error = err.status
-    ? err
-    : createError(500, "Something went wrong. Notified dev.");
+// app.use((err, req, res, next) => {
+//   console.log(err);
+//   const error = err.status
+//     ? err
+//     : createError(500, "Something went wrong. Notified dev.");
 
-  res.status(error.status).json(error);
-});
+//   res.status(error.status).json(error);
+// });
 
 const port = process.env.PORT || 3005;
 

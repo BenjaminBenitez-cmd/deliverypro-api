@@ -1,28 +1,23 @@
 const createHttpError = require("http-errors");
 const db = require("../../db");
 const Days = require("../days/days.model");
+const Time = require("../time/time.model");
 const Schedule = require("./schedule.model");
 
 //GET A SCHEDULE
 const getCompanySchedule = async (req, res) => {
   const companyID = req.user.company_id;
-
   try {
     const results = await Schedule.getOne(companyID);
-
     const daysAvailable = await Days.getMany();
-
     if (results.rows[0] === undefined) {
       return res
         .status(404)
         .send({ status: "not found", message: "No active schedule" });
     }
 
-    const times = await db.query(
-      "SELECT t.id, t.time_start, t.time_end, n.name, n.id AS name_of_day_id FROM times As t INNER JOIN names_of_days AS n ON t.name_of_day_id = n.id WHERE t.schedule_id = $1",
-      [results.rows[0].id]
-    );
-
+    const times = await Time.getMany(results.rows[0].id);
+    console.log(times);
     res.status(200).json({
       status: "success",
       data: {
@@ -34,14 +29,14 @@ const getCompanySchedule = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).end();
+    res.status(500).end();
   }
 };
 
 //DELETE A SCHEDULE
 const deleteSchedule = async (req, res) => {
   try {
-    await db.query("DELETE FROM schedules WHERE id = $1", [req.params.id]);
+    await Schedule.deleteOne(req.params.id);
     res.status(204).end();
   } catch (err) {
     res.status(500).end();
@@ -114,9 +109,11 @@ const addDayAndTime = async (req, res, next) => {
     }
 
     //then insert the time
-    const time = await db.query(
-      "WITH inserted AS (INSERT INTO times (time_start, time_end, name_of_day_id, schedule_id) VALUES ($1, $2, $3, $4) RETURNING *) SELECT inserted.*, names_of_days.name FROM inserted INNER JOIN names_of_days ON inserted.name_of_day_Id = names_of_days.id",
-      [time_start, time_end, name_of_day_id, schedule_id]
+    const time = await Time.createOne(
+      time_start,
+      time_end,
+      name_of_day_id,
+      schedule_id
     );
 
     //Proceed to insert the days
@@ -140,7 +137,7 @@ const addDayAndTime = async (req, res, next) => {
 
 const deleteDaysAndTime = async (req, res) => {
   try {
-    await db.query("DELETE FROM times WHERE id = $1", [req.params.id]);
+    await Time.deleteOne(req.params.id);
     res.status(204).end();
   } catch (err) {
     res.status(500).end();
@@ -157,10 +154,7 @@ const updateTime = async (req, res) => {
   const id = req.params.id;
   const { time_start, time_end } = req.body;
   try {
-    const results = await db.query(
-      "UPDATE times SET time_start = $1, time_end = $2 WHERE id = $3 returning *",
-      [time_start, time_end, id]
-    );
+    const results = await Time.updateOne(time_start, time_end, id);
 
     if (results.rows[0] === undefined) {
       return res

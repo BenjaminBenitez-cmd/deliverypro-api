@@ -9,4 +9,11 @@ Customer.getMany = (companyId) => {
   );
 };
 
+Customer.createOne = (firstname, lastname, phonenumber, email, companyId) => {
+  return db.query(
+    "INSERT INTO client (first_name, last_name, phone_number, email, delivery_company_id) values($1, $2, $3, $4, $5) returning *",
+    [firstname, lastname, phonenumber, email, companyId]
+  );
+};
+
 module.exports = Customer;

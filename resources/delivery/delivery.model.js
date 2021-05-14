@@ -5,7 +5,7 @@ const db = require("../../db");
 const Delivery = {};
 
 //GET ALL DELIVERIES
-Delivery.create = (
+Delivery.createOne = (
   client,
   delivery_day,
   delivery_time,
