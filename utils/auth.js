@@ -3,6 +3,7 @@ const db = require("../db");
 const jwt = require("jsonwebtoken");
 const { mailer } = require("./mailer");
 const bcrypt = require("bcrypt");
+const { ErrorHandler } = require("../helpers/Error");
 
 const newToken = (user) => {
   return jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
@@ -145,7 +146,7 @@ module.exports.signin = async (req, res) => {
 
   try {
     const user = await db.query(
-      "SELECT email, password, name,  id FROM users WHERE email = $1",
+      "SELECT email, password, name, id FROM users WHERE email = $1",
       [req.body.email]
     );
     if (user.rows[0] === undefined)
@@ -220,7 +221,7 @@ module.exports.protect = async (req, res, next) => {
   const bearer = req.headers.authorization;
 
   if (!bearer || !bearer.startsWith("Bearer ")) {
-    return res.status(401).end();
+    next(new ErrorHandler(401, "Unauthorized Request"));
   }
 
   const token = bearer.split("Bearer ")[1].trim();
@@ -228,7 +229,7 @@ module.exports.protect = async (req, res, next) => {
   try {
     payload = await verifyToken(token);
   } catch (e) {
-    return res.status(401).end();
+    next(new ErrorHandler(401, "Unauthorized Request"));
   }
 
   let user;
@@ -238,11 +239,9 @@ module.exports.protect = async (req, res, next) => {
       [payload.id]
     );
     if (user.rows[0] === undefined)
-      return res
-        .status(401)
-        .json({ status: "error", message: "Invalid request" });
+      throw new ErrorHandler(401, "Unauthorized Request");
   } catch (err) {
-    return res.status(401).end();
+    next(err);
   }
 
   req.user = user.rows[0];
@@ -253,7 +252,7 @@ module.exports.protectPublicRoute = async (req, res, next) => {
   const bearer = req.headers.authorization;
 
   if (!bearer || !bearer.startsWith("Bearer ")) {
-    return res.status(401).end();
+    throw new ErrorHandler(401, "Unauthorized Request");
   }
 
   const token = bearer.split("Bearer ")[1].trim();
@@ -267,9 +266,7 @@ module.exports.protectPublicRoute = async (req, res, next) => {
     );
 
     if (isValid.rows[0] === undefined) {
-      return res
-        .status(401)
-        .send({ status: "error", message: "Invalid Request" });
+      throw new ErrorHandler(401, "Unauthorized Request");
     }
     const isTokenValid = await comparePassword(
       token,
