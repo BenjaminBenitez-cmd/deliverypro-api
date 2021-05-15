@@ -229,7 +229,7 @@ module.exports.protect = async (req, res, next) => {
   try {
     payload = await verifyToken(token);
   } catch (e) {
-    next(new ErrorHandler(401, "Unauthorized Request"));
+    return res.status(401).end();
   }
 
   let user;
@@ -238,8 +238,7 @@ module.exports.protect = async (req, res, next) => {
       "SELECT name, email, id, company_id FROM users WHERE id = $1",
       [payload.id]
     );
-    if (user.rows[0] === undefined)
-      throw new ErrorHandler(401, "Unauthorized Request");
+    if (user.rows[0] === undefined) return res.status(401).end();
   } catch (err) {
     next(err);
   }

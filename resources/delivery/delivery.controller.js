@@ -1,8 +1,9 @@
-const { ErrorHandler } = require("../../helpers/Error");
 const Address = require("../address/address.model");
 const Customer = require("../customer/customer.model");
 const Delivery = require("./delivery.model");
-const { NOT_FOUND } = require("../../helpers/ErrorCodes");
+const { INCOMPLETE_PARAMETERS } = require("../../helpers/ErrorCodes");
+const { ErrorHandler } = require("../../helpers/Error");
+const checkResults = require("../../helpers/ResultsChecker");
 
 const getDeliveries = async (req, res, next) => {
   const company_id = req.user.company_id;
@@ -23,9 +24,7 @@ const getDeliveries = async (req, res, next) => {
 
 const getDelivery = async (req, res, next) => {
   if (!req.params) {
-    return res
-      .status(400)
-      .send({ status: "error", message: "Missing parameters" });
+    throw new ErrorHandler(INCOMPLETE_PARAMETERS, "Missing id parameter");
   }
 
   const id = req.params.id;
@@ -33,9 +32,8 @@ const getDelivery = async (req, res, next) => {
 
   try {
     const results = await Delivery.getOne(id, company_id);
-    if (results.rows[0] === undefined) {
-      throw new ErrorHandler(NOT_FOUND, "Unable to find delivery");
-    }
+
+    checkResults(results, "Delivery not found");
 
     res.status(200).json({
       status: "success",
@@ -44,16 +42,15 @@ const getDelivery = async (req, res, next) => {
       },
     });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
 
-const updateDelivery = async (req, res) => {
+const updateDelivery = async (req, res, next) => {
   //needs repairs
   if (!req.body || !req.params.id) {
-    return res
-      .status(400)
-      .send({ status: "error", message: "Missing parameters" });
+    throw new ErrorHandler(INCOMPLETE_PARAMETERS, "Missing parameters");
   }
 
   const companyID = req.user.company_id;
@@ -79,6 +76,8 @@ const updateDelivery = async (req, res) => {
       delivery_status
     );
 
+    checkResults(updatedDelivery, "Delivery not found");
+
     res.status(201).json({
       status: "success",
       data: {
@@ -90,12 +89,13 @@ const updateDelivery = async (req, res) => {
   }
 };
 
-const toggleDelivery = async (req, res) => {
+const toggleDelivery = async (req, res, next) => {
   const companyID = req.user.company_id;
   const id = req.params.id;
 
   try {
     const updatedDelivery = await Delivery.updateFullfillment(id, companyID);
+    checkResults(updatedDelivery, "Delivery not found");
 
     res.status(201).json({
       status: "success",
@@ -108,7 +108,7 @@ const toggleDelivery = async (req, res) => {
   }
 };
 
-const addDelivery = async (req, res) => {
+const addDelivery = async (req, res, next) => {
   const { id, company_id } = req.user;
   const {
     first_name,
@@ -117,6 +117,9 @@ const addDelivery = async (req, res) => {
     phone_number,
     delivery_day,
     delivery_time,
+    street,
+    district,
+    description,
   } = req.body;
 
   try {
@@ -139,6 +142,7 @@ const addDelivery = async (req, res) => {
     const addressCreated = await Address.createOne(
       street,
       district,
+      description,
       clientCreated.rows[0].id
     );
 
@@ -154,7 +158,8 @@ const addDelivery = async (req, res) => {
       },
     });
   } catch (err) {
-    next(e);
+    console.log(err);
+    next(err);
   }
 };
 

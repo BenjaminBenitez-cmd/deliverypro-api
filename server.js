@@ -1,8 +1,23 @@
 require("dotenv").config();
 const express = require("express");
+const Sentry = require("@sentry/node");
+const Tracing = require("@sentry/tracing");
 const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
+
+Sentry.init({
+  dsn: process.env.SENTRY_API_KEY,
+
+  // Set tracesSampleRate to 1.0 to capture 100%
+  // of transactions for performance monitoring.
+  // We recommend adjusting this value in production
+  tracesSampleRate: 1.0,
+  environment: process.env.NODE_ENV,
+});
+
+// The request handler must be the first middleware on the app
+app.use(Sentry.Handlers.requestHandler());
 
 //apis
 const { deliveryRouter } = require("./resources/delivery/delivery.router");
@@ -15,7 +30,6 @@ const {
   signin,
   protect,
   registerForDriver,
-  protectPublicRoute,
 } = require("./utils/auth");
 const { schedulesRouter } = require("./resources/schedule/schedule.router");
 const { companyRouter } = require("./resources/company/company.router");
@@ -26,11 +40,6 @@ const { handleError, ErrorHandler } = require("./helpers/Error");
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
-
-app.use((req, res, next) => {
-  console.log("Yeah our middleware");
-  next();
-});
 
 app.get("/error", (req, res) => {
   throw new ErrorHandler(500, "Internal server error");
@@ -54,6 +63,9 @@ app.post("/signup", signup);
 app.post("/authenticate", signupAuthentication);
 app.post("/signin", signin);
 app.post("/driver/signin", registerForDriver);
+
+// The error handler must be before any other error middleware and after all controllers
+app.use(Sentry.Handlers.errorHandler());
 
 //Error handling middleware
 app.use((err, req, res, next) => {
