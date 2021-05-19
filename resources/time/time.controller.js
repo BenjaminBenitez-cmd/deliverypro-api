@@ -99,14 +99,31 @@ const addDayAndTime = async (req, res, next) => {
   }
 };
 
-const getTimes = (req, res) => {
-  const scheduleId = req.body.scheduleId;
+const getTimes = async (req, res) => {
+  const scheduleId = 4;
   try {
-    const times = Time.getMany(scheduleId);
+    const times = await Time.getMany(scheduleId);
+    res.status(200).json({
+      status: "success",
+      results: times.length,
+      data: {
+        times: times.rows,
+      },
+    });
+  } catch (err) {
+    res.status(500).end();
+  }
+};
+
+const getTime = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const time = await Time.getOne(id);
+    console.log(time);
     res.status(200).json({
       status: "success",
       data: {
-        times: times.rows,
+        time: time.rows[0],
       },
     });
   } catch (err) {
@@ -119,4 +136,5 @@ module.exports = {
   deleteDaysAndTime,
   addDayAndTime,
   getTimes,
+  getTime,
 };
