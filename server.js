@@ -37,6 +37,7 @@ const { userRouter } = require("./resources/user/user.router");
 const { tokenRouter } = require("./resources/tokens/token.router");
 const { handleError, ErrorHandler } = require("./helpers/Error");
 const { timeRouter } = require("./resources/time/time.router");
+const { addressRouter } = require("./resources/address/address.router");
 
 app.use(cors());
 app.use(express.json());
@@ -58,6 +59,7 @@ app.use("/api/v1/schedules", schedulesRouter);
 app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/times", timeRouter);
+app.use("/api/v1/addresses", addressRouter);
 app.use("/api/v1/tokens", userRouter);
 
 //Authentication endpoints
