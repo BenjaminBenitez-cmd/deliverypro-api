@@ -5,12 +5,12 @@ const Time = {};
 //GET ALL TIMES
 Time.getMany = (scheduleId) => {
   return db.query(
-    "SELECT t.id, t.time_start, t.time_end, n.name, n.id AS name_of_day_id FROM times As t INNER JOIN names_of_days AS n ON t.name_of_day_id = n.id WHERE t.schedule_id = $1",
+    "SELECT t.id, t.time_start, t.time_end, n.name, n.id AS name_of_day_id FROM times As t INNER JOIN names_of_days AS n ON t.name_of_day_id = n.id AND t.schedule_id = $1",
     [scheduleId]
   );
 };
-//GET A TIME
 
+//GET A TIME
 Time.getOne = (id) => {
   return db.query(
     "SELECT t.id, t.time_start, t.time_end, n.name, n.id AS name_of_day_id FROM times As t INNER JOIN names_of_days AS n ON t.name_of_day_id = n.id WHERE t.id = $1",

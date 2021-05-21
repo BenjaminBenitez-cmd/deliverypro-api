@@ -120,8 +120,11 @@ const addDelivery = async (req, res, next) => {
     street,
     district,
     description,
+    longitude,
+    latitude,
   } = req.body;
 
+  console.log(req.body);
   try {
     const clientCreated = await Customer.createOne(
       first_name,
@@ -142,6 +145,8 @@ const addDelivery = async (req, res, next) => {
     const addressCreated = await Address.createOne(
       street,
       district,
+      longitude,
+      latitude,
       description,
       clientCreated.rows[0].id
     );
