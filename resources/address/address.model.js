@@ -27,7 +27,7 @@ Address.createOne = (
 
 Address.getManyGeoJSON = (delivery_company_id) => {
   return db.query(
-    "SELECT row_to_json(fc) FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features FROM (SELECT 'Feature' As type, ST_AsGeoJSON(lg.geolocation)::json As geometry, row_to_json(lp) As properties FROM address As lg INNER JOIN (SELECT id, street FROM address) As lp ON lg.id = lp.id AND lg.delivery_company_id = $1  ) As f )  As fc",
+    "SELECT json_build_object('type', 'FeatureCollection', 'Features', json_build_array(json_build_object( 'type', 'Feature', 'id', a.id, 'geometry', ST_AsGeoJSON(a.geolocation)::json, 'properties', json_build_object( 'id', a.id, 'name', concat(c.first_name, ' ', c.last_name) )) )) FROM delivery AS d INNER JOIN client AS c ON d.client = c.id AND d.delivery_status IS FALSE INNER JOIN address AS a ON c.id = a.client_id WHERE d.delivery_company_id = $1",
     [delivery_company_id]
   );
 };
