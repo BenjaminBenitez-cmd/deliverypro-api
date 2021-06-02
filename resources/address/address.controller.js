@@ -11,7 +11,7 @@ const getGeoJSON = async (req, res, next) => {
     res.status(200).json({
       status: "success",
       data: {
-        addresses: response.rows[0].json_build_object,
+        addresses: response.rows[0].jsonb_build_object,
       },
     });
   } catch (err) {

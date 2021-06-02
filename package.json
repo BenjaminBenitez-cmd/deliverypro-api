@@ -11,6 +11,7 @@
   "author": "Benjamin Benitez",
   "license": "ISC",
   "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.12.1",
     "@sentry/node": "^6.3.6",
     "@sentry/tracing": "^6.3.6",
     "bcrypt": "^5.0.1",

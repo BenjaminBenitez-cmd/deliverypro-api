@@ -16,4 +16,11 @@ Customer.createOne = (firstname, lastname, phonenumber, email, companyId) => {
   );
 };
 
+Customer.updateOne = (id, first_name, last_name, phone, email, companyId) => {
+  return db.query(
+    "UPDATE client SET first_name = $1, last_name = $2, phone_number = $3, email = $4 WHERE id = $5 AND delivery_company_id = $6 RETURNING *",
+    [first_name, last_name, phone, email, id, companyId]
+  );
+};
+
 module.exports = Customer;
