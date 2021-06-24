@@ -30,6 +30,8 @@ const {
   signin,
   protect,
   registerForDriver,
+  verifyDelivery,
+  allowCustomer,
 } = require("./utils/auth");
 const { schedulesRouter } = require("./resources/schedule/schedule.router");
 const { companyRouter } = require("./resources/company/company.router");
@@ -38,6 +40,10 @@ const { tokenRouter } = require("./resources/tokens/token.router");
 const { handleError, ErrorHandler } = require("./helpers/Error");
 const { timeRouter } = require("./resources/time/time.router");
 const { addressRouter } = require("./resources/address/address.router");
+const {
+  getDeliveryForCustomer,
+  updateDeliveryVerification,
+} = require("./resources/delivery/delivery.controller");
 
 app.use(cors());
 app.use(express.json());
@@ -67,7 +73,8 @@ app.post("/signup", signup);
 app.post("/authenticate", signupAuthentication);
 app.post("/signin", signin);
 app.post("/driver/signin", registerForDriver);
-
+app.get("/verifydelivery", allowCustomer, getDeliveryForCustomer);
+app.post("/verifydelivery", allowCustomer, updateDeliveryVerification);
 // The error handler must be before any other error middleware and after all controllers
 app.use(Sentry.Handlers.errorHandler());
 

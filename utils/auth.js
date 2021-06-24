@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const { mailer } = require("./mailer");
 const bcrypt = require("bcrypt");
 const { ErrorHandler } = require("../helpers/Error");
+const { response } = require("express");
+const Delivery = require("../resources/delivery/delivery.model");
+const { NOT_AUTHORIZED } = require("../helpers/ErrorCodes");
 
 const newToken = (user) => {
   return jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
@@ -226,6 +229,7 @@ module.exports.protect = async (req, res, next) => {
 
   const token = bearer.split("Bearer ")[1].trim();
   let payload;
+
   try {
     payload = await verifyToken(token);
   } catch (e) {
@@ -247,39 +251,65 @@ module.exports.protect = async (req, res, next) => {
   next();
 };
 
-module.exports.protectPublicRoute = async (req, res, next) => {
-  const bearer = req.headers.authorization;
+// module.exports.protectPublicRoute = async (req, res, next) => {
+//   const bearer = req.headers.authorization;
 
-  if (!bearer || !bearer.startsWith("Bearer ")) {
-    throw new ErrorHandler(401, "Unauthorized Request");
+//   if (!bearer || !bearer.startsWith("Bearer ")) {
+//     throw new ErrorHandler(401, "Unauthorized Request");
+//   }
+
+//   const token = bearer.split("Bearer ")[1].trim();
+//   const identifier = token.slice(0, 6);
+
+//   let isValid;
+//   try {
+//     isValid = await db.query(
+//       "SELECT id, company_api_key FROM company WHERE company_api_key_id = $1",
+//       [identifier]
+//     );
+
+//     if (isValid.rows[0] === undefined) {
+//       throw new ErrorHandler(401, "Unauthorized Request");
+//     }
+//     const isTokenValid = await comparePassword(
+//       token,
+//       isValid.rows[0].company_api_key
+//     );
+//     if (!isTokenValid) {
+//       return res
+//         .status(401)
+//         .send({ status: "error", message: "Invalid Request" });
+//     }
+//   } catch (err) {
+//     return res.status(500).end();
+//   }
+
+//   req.company = { id: isValid.rows[0].id };
+//   next();
+// };
+
+module.exports.allowCustomer = async (req, res, next) => {
+  const bearer = req.headers.authorization;
+  try {
+    if (!bearer || !bearer.startsWith("Bearer ")) {
+      new ErrorHandler(INCOMPLETE_PARAMETERS, "Unauthorized Request");
+    }
+  } catch (err) {
+    next(err);
   }
 
   const token = bearer.split("Bearer ")[1].trim();
-  const identifier = token.slice(0, 6);
 
-  let isValid;
+  let payload;
+
   try {
-    isValid = await db.query(
-      "SELECT id, company_api_key FROM company WHERE company_api_key_id = $1",
-      [identifier]
-    );
-
-    if (isValid.rows[0] === undefined) {
-      throw new ErrorHandler(401, "Unauthorized Request");
-    }
-    const isTokenValid = await comparePassword(
-      token,
-      isValid.rows[0].company_api_key
-    );
-    if (!isTokenValid) {
-      return res
-        .status(401)
-        .send({ status: "error", message: "Invalid Request" });
-    }
+    payload = await verifyToken(token);
+    req.user = {
+      company_id: payload.company_id,
+      delivery_id: payload.delivery_id,
+    };
+    next();
   } catch (err) {
-    return res.status(500).end();
+    next(new ErrorHandler(NOT_AUTHORIZED, "Invalid Token"));
   }
-
-  req.company = { id: isValid.rows[0].id };
-  next();
 };

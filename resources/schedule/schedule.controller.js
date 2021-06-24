@@ -162,12 +162,7 @@ const updateTime = async (req, res) => {
         .send({ status: "error", message: "There was an error" });
     }
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        time: results.rows[0],
-      },
-    });
+    res.status(200).end();
   } catch (err) {
     console.log(err);
     res.status(500).end();

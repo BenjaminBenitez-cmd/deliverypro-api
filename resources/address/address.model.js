@@ -48,4 +48,12 @@ Address.getManyGeoJSON = (delivery_company_id) => {
   );
 };
 
+//Fix this one
+Address.getOne = (client_id, delivery_company_id) => {
+  return db.query(
+    "SELECT *, ST_AsGeoJSON(geolocation)::jsonb AS location FROM address WHERE client_id = $1 AND delivery_company_id = $2",
+    [client_id, delivery_company_id]
+  );
+};
+
 module.exports = Address;

@@ -9,6 +9,13 @@ Customer.getMany = (companyId) => {
   );
 };
 
+Customer.getOne = (id, companyId) => {
+  return db.query(
+    "SELECT * FROM client WHERE id = $1 AND delivery_company_id = $2",
+    [id, companyId]
+  );
+};
+
 Customer.createOne = (firstname, lastname, phonenumber, email, companyId) => {
   return db.query(
     "INSERT INTO client (first_name, last_name, phone_number, email, delivery_company_id) values($1, $2, $3, $4, $5) returning *",
